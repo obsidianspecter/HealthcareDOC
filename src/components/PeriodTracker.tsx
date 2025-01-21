@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import Tooltip from 'react-tooltip-lite';
 
 export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
-  const [cycleLength, setCycleLength] = useState<number>(28);
-  const [lastPeriod, setLastPeriod] = useState<string>('2024-03-05');
+  const [cycleLength, setCycleLength] = useState<number>(() => {
+    const savedCycleLength = localStorage.getItem('cycleLength');
+    return savedCycleLength ? Number(savedCycleLength) : 28;
+  });
 
-  // Function to calculate future period and fertile days
+  const [lastPeriod, setLastPeriod] = useState<string>(() => {
+    return localStorage.getItem('lastPeriod') || '2024-03-05';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cycleLength', cycleLength.toString());
+    localStorage.setItem('lastPeriod', lastPeriod);
+  }, [cycleLength, lastPeriod]);
+
   const generateCycleEvents = () => {
     const events = [];
-    const periodDuration = 5;  // Average period length
+    const periodDuration = 5; 
     const fertileWindowStart = 10;
     const fertileWindowEnd = 15;
     const ovulationDay = 14;
@@ -44,6 +54,10 @@ export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
   };
 
   const events = generateCycleEvents();
+
+  const handleEventClick = (info: any) => {
+    alert(`Event: ${info.event.title}\nStart: ${info.event.start.toDateString()}`);
+  };
 
   return (
     <div className={`w-full max-w-4xl mx-auto rounded-xl overflow-hidden ${
@@ -84,6 +98,12 @@ export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
               darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
             }`}
           />
+          {cycleLength < 21 && (
+            <p className="text-xs text-red-500">Short cycle length detected. Consult your healthcare provider.</p>
+          )}
+          {cycleLength > 35 && (
+            <p className="text-xs text-red-500">Long cycle length detected. Consider seeking medical advice.</p>
+          )}
         </div>
       </div>
 
@@ -102,7 +122,7 @@ export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
           selectable={true}
           editable={false}
           themeSystem="standard"
-          eventClick={(info) => alert(`Event: ${info.event.title}`)}
+          eventClick={handleEventClick}
         />
       </div>
 
@@ -128,6 +148,12 @@ export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
             <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Ovulation</span>
           </span>
         </Tooltip>
+      </div>
+
+      {/* Notification for Upcoming Events */}
+      <div className="mt-6 p-4 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+        <strong>Reminder:</strong> Your next period is estimated to start on{' '}
+        {new Date(events[0]?.start).toDateString()}. Stay prepared!
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon } from 'leaflet';
 
@@ -11,7 +11,7 @@ const defaultIcon = new Icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
   iconSize: [25, 41],
-  iconAnchor: [12, 41]
+  iconAnchor: [12, 41],
 });
 
 interface Store {
@@ -25,25 +25,25 @@ interface Store {
 const storesData: Store[] = [
   {
     id: 1,
-    name: "Women's Health Clinic",
-    position: [40.7128, -74.0060],
-    address: "123 Healthcare Ave, New York",
-    phone: "(555) 123-4567"
+    name: 'Apollo Pharmacy',
+    position: [11.0168, 76.9558],
+    address: '123 Gandhipuram, Coimbatore',
+    phone: '(0422) 123-4567',
   },
   {
     id: 2,
-    name: "Family Planning Center",
-    position: [40.7282, -73.9942],
-    address: "456 Wellness St, New York",
-    phone: "(555) 987-6543"
+    name: 'Medplus Pharmacy',
+    position: [11.0207, 76.9665],
+    address: '456 RS Puram, Coimbatore',
+    phone: '(0422) 234-5678',
   },
   {
     id: 3,
-    name: "Women's Wellness Center",
-    position: [40.7112, -74.0123],
-    address: "789 Medical Blvd, New York",
-    phone: "(555) 456-7890"
-  }
+    name: 'HealthPlus Medical',
+    position: [11.0018, 76.9629],
+    address: '789 Peelamedu, Coimbatore',
+    phone: '(0422) 345-6789',
+  },
 ];
 
 export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
@@ -51,13 +51,18 @@ export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
+  useEffect(() => {
+    locateUser();
+  }, []);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
     setStores(
-      storesData.filter((store) =>
-        store.name.toLowerCase().includes(query) ||
-        store.address.toLowerCase().includes(query)
+      storesData.filter(
+        (store) =>
+          store.name.toLowerCase().includes(query) ||
+          store.address.toLowerCase().includes(query)
       )
     );
   };
@@ -69,12 +74,16 @@ export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
           setUserLocation([position.coords.latitude, position.coords.longitude]);
         },
         () => {
-          alert('Unable to retrieve location.');
+          alert('Unable to retrieve your location.');
         }
       );
     } else {
       alert('Geolocation is not supported by your browser.');
     }
+  };
+
+  const openGoogleMaps = (lat: number, lng: number) => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
   };
 
   return (
@@ -86,7 +95,7 @@ export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-2">🗺️ Healthcare Facilities Near You</h3>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Find women's healthcare facilities in your area.
+          Find women's healthcare facilities in Coimbatore.
         </p>
       </div>
 
@@ -112,7 +121,7 @@ export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
       {/* Map Display */}
       <div className="h-[400px] rounded-lg overflow-hidden mb-6">
         <MapContainer
-          center={userLocation || [40.7128, -74.0060]}
+          center={userLocation || [11.0168, 76.9558]}
           zoom={13}
           style={{ height: '100%', width: '100%' }}
         >
@@ -130,6 +139,12 @@ export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
                   <h4 className="font-semibold">{store.name}</h4>
                   <p className="text-sm text-gray-600">{store.address}</p>
                   <p className="text-sm text-gray-600">{store.phone}</p>
+                  <button
+                    onClick={() => openGoogleMaps(store.position[0], store.position[1])}
+                    className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                  >
+                    📍 Navigate
+                  </button>
                 </div>
               </Popup>
             </Marker>
@@ -150,7 +165,7 @@ export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
             key={store.id}
             className={`p-4 rounded-lg ${
               darkMode ? 'bg-gray-700' : 'bg-gray-50'
-            }`}
+            } shadow-md`}
           >
             <h4 className="font-semibold mb-2">{store.name}</h4>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -159,6 +174,12 @@ export default function StoreLocator({ darkMode }: { darkMode: boolean }) {
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               {store.phone}
             </p>
+            <button
+              onClick={() => openGoogleMaps(store.position[0], store.position[1])}
+              className="mt-2 px-4 py-1 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition"
+            >
+              Navigate
+            </button>
           </div>
         ))}
       </div>

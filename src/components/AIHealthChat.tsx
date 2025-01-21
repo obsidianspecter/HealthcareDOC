@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Upload, FileText, Download } from 'lucide-react';
+import { Send, Upload, Download, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: number;
@@ -11,14 +13,16 @@ interface Message {
 export default function AIHealthChat({ darkMode }: { darkMode: boolean }) {
   const [messages, setMessages] = useState<Message[]>(() => {
     const savedMessages = localStorage.getItem('chatMessages');
-    return savedMessages ? JSON.parse(savedMessages) : [
-      {
-        id: 1,
-        text: "How can I help you?",
-        sender: 'assistant',
-        timestamp: new Date(),
-      },
-    ];
+    return savedMessages
+      ? JSON.parse(savedMessages)
+      : [
+          {
+            id: 1,
+            text: "Hello! How can I assist you today? 😊",
+            sender: 'assistant',
+            timestamp: new Date(),
+          },
+        ];
   });
 
   const [input, setInput] = useState('');
@@ -34,7 +38,7 @@ export default function AIHealthChat({ darkMode }: { darkMode: boolean }) {
     if (!input.trim()) return;
 
     const userMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now(),
       text: input,
       sender: 'user',
       timestamp: new Date(),
@@ -53,7 +57,7 @@ export default function AIHealthChat({ darkMode }: { darkMode: boolean }) {
 
       const data = await response.json();
       const aiMessage: Message = {
-        id: messages.length + 2,
+        id: Date.now(),
         text: data.response,
         sender: 'assistant',
         timestamp: new Date(),
@@ -64,7 +68,12 @@ export default function AIHealthChat({ darkMode }: { darkMode: boolean }) {
       console.error('Error communicating with backend:', error);
       setMessages((prevMessages) => [
         ...prevMessages,
-        { id: messages.length + 2, text: 'Error: Unable to fetch response.', sender: 'assistant', timestamp: new Date() },
+        {
+          id: Date.now(),
+          text: 'Error: Unable to fetch response. Please try again later.',
+          sender: 'assistant',
+          timestamp: new Date(),
+        },
       ]);
     } finally {
       setLoading(false);
@@ -89,71 +98,82 @@ export default function AIHealthChat({ darkMode }: { darkMode: boolean }) {
     document.body.removeChild(link);
   };
 
+  const clearChatHistory = () => {
+    localStorage.removeItem('chatMessages');
+    setMessages([]);
+  };
+
   return (
     <div className={`w-full max-w-4xl mx-auto rounded-xl overflow-hidden ${
-      darkMode ? 'bg-gray-800' : 'bg-white'
+      darkMode ? 'bg-gray-900' : 'bg-white'
     } shadow-lg`}>
-      <div className={`p-4 flex justify-between items-center ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} border-b ${
-        darkMode ? 'border-gray-700' : 'border-gray-200'
-      }`}>
+      <div className={`p-6 flex justify-between items-center ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} border-b ${
+        darkMode ? 'border-gray-700' : 'border-gray-300'
+      } rounded-t-xl`}>
         <div>
-          <h3 className="text-lg font-semibold">AI Health Assistant</h3>
+          <h3 className="text-2xl font-bold">🤖 AI Health Assistant</h3>
           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Available 24/7 for your health queries
           </p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex space-x-4">
           <label className="cursor-pointer">
             <input type="file" accept=".txt,.pdf" onChange={handleFileUpload} className="hidden" />
-            <Upload className="h-6 w-6 text-pink-500 hover:text-pink-600 transition" />
+            <Upload className="h-7 w-7 text-pink-500 hover:text-pink-600 transition-transform transform hover:scale-110" />
           </label>
           <button onClick={exportChat}>
-            <Download className="h-6 w-6 text-gray-500 hover:text-gray-700 transition" />
+            <Download className="h-7 w-7 text-gray-500 hover:text-gray-700 transition-transform transform hover:scale-110" />
+          </button>
+          <button onClick={clearChatHistory}>
+            <Trash2 className="h-7 w-7 text-red-500 hover:text-red-700 transition-transform transform hover:scale-110" />
           </button>
         </div>
       </div>
 
-      <div className="h-[400px] overflow-y-auto p-4 space-y-4">
+      <div className="h-[500px] overflow-y-auto p-6 space-y-6 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-lg p-3 ${
+            <div className={`max-w-[75%] rounded-lg p-4 ${
               message.sender === 'user'
-                ? darkMode
-                  ? 'bg-pink-400 text-gray-900'
-                  : 'bg-pink-600 text-white'
-                : darkMode
-                ? 'bg-gray-700 text-gray-100'
-                : 'bg-gray-100 text-gray-900'
-            }`}>
-              <p>{message.text}</p>
-              <p className="text-xs mt-1 text-gray-400">
+                ? darkMode ? 'bg-pink-500 text-gray-900' : 'bg-pink-600 text-white'
+                : darkMode ? 'bg-gray-700 text-gray-100' : 'bg-gray-200 text-gray-900'
+            } shadow-md transition-all transform hover:scale-105`}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+              <p className="text-xs mt-2 text-gray-400">
                 {new Date(message.timestamp).toLocaleTimeString()}
               </p>
             </div>
           </div>
         ))}
-        {loading && <p className="text-center text-gray-500">Thinking...</p>}
+        {loading && (
+          <div className="text-center">
+            <div className="flex items-center justify-center space-x-2 animate-pulse">
+              <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
+              <div className="w-3 h-3 bg-pink-300 rounded-full"></div>
+            </div>
+            <p className="mt-2 text-pink-500 font-semibold">Thinking...</p>
+          </div>
+        )}
       </div>
 
-      <form onSubmit={handleSend} className="p-4 border-t border-gray-200 flex items-center">
+      <form onSubmit={handleSend} className="p-6 border-t border-gray-300 flex items-center bg-white dark:bg-gray-900">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your health question..."
-          className={`flex-1 p-2 rounded-lg border ${
-            darkMode
-              ? 'bg-gray-700 border-gray-600 text-gray-100'
-              : 'bg-white border-gray-200 text-gray-900'
-          } focus:outline-none focus:ring-2 focus:ring-pink-500`}
+          placeholder="Ask me anything..."
+          className={`flex-1 p-3 rounded-lg border ${
+            darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-gray-50 border-gray-300 text-gray-900'
+          } focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all`}
         />
         <button
           type="submit"
-          className={`ml-2 p-2 rounded-lg ${
+          className={`ml-4 p-3 rounded-lg ${
             darkMode ? 'bg-pink-400 text-gray-900' : 'bg-pink-600 text-white'
-          } hover:opacity-90 transition-opacity`}
+          } hover:opacity-90 transition-all transform hover:scale-105`}
         >
-          <Send className="h-5 w-5" />
+          <Send className="h-6 w-6" />
         </button>
       </form>
     </div>

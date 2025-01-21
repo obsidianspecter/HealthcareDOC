@@ -6,18 +6,29 @@ import {
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
+import { openDB } from 'idb';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+const DB_NAME = 'SymptomTrackerDB';
+const STORE_NAME = 'symptoms';
+
+async function saveToDB(data: any) {
+  const db = await openDB(DB_NAME, 1, {
+    upgrade(db) {
+      db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+    },
+  });
+  await db.put(STORE_NAME, { id: 1, data });
+}
+
+async function loadFromDB() {
+  const db = await openDB(DB_NAME, 1);
+  return (await db.get(STORE_NAME, 1))?.data || null;
+}
 
 export default function SymptomManager({ darkMode }: { darkMode: boolean }) {
   const initialSymptoms = {
@@ -25,76 +36,41 @@ export default function SymptomManager({ darkMode }: { darkMode: boolean }) {
     nausea: 1,
     fatigue: 3,
     cramps: 4,
-    mood: 3
+    mood: 3,
   };
 
-  const [symptoms, setSymptoms] = useState<{ [key: string]: number }>(() => {
-    const savedSymptoms = localStorage.getItem('symptoms');
-    return savedSymptoms ? JSON.parse(savedSymptoms) : initialSymptoms;
-  });
+  const [symptoms, setSymptoms] = useState<{ [key: string]: number }>(initialSymptoms);
+  const [history, setHistory] = useState<{ symptom: string; value: number; timestamp: string }[]>([]);
+  const [newSymptom, setNewSymptom] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('symptoms', JSON.stringify(symptoms));
+    async function loadSymptoms() {
+      const savedData = await loadFromDB();
+      if (savedData) setSymptoms(savedData);
+    }
+    loadSymptoms();
+  }, []);
+
+  useEffect(() => {
+    saveToDB(symptoms);
   }, [symptoms]);
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false
-      },
-      title: {
-        display: false
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 5,
-        ticks: {
-          stepSize: 1,
-          color: darkMode ? '#9ca3af' : '#4b5563'
-        },
-        grid: {
-          color: darkMode ? '#374151' : '#e5e7eb'
-        }
-      },
-      x: {
-        ticks: {
-          color: darkMode ? '#9ca3af' : '#4b5563'
-        },
-        grid: {
-          display: false
-        }
-      }
-    }
-  };
-
-  const data = {
-    labels: Object.keys(symptoms).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-    datasets: [
-      {
-        data: Object.values(symptoms),
-        backgroundColor: darkMode ? '#f472b6' : '#db2777',
-        borderRadius: 8
-      }
-    ]
-  };
-
   const handleSymptomChange = (symptom: string, value: number) => {
-    setSymptoms(prev => ({
+    setSymptoms((prev) => ({
       ...prev,
-      [symptom]: value
+      [symptom]: value,
     }));
+    setHistory((prev) => [
+      ...prev,
+      { symptom, value, timestamp: new Date().toLocaleString() },
+    ]);
   };
-
-  const [newSymptom, setNewSymptom] = useState('');
 
   const addSymptom = () => {
     if (newSymptom && !symptoms[newSymptom.toLowerCase()]) {
-      setSymptoms(prev => ({
+      setSymptoms((prev) => ({
         ...prev,
-        [newSymptom.toLowerCase()]: 0
+        [newSymptom.toLowerCase()]: 0,
       }));
       setNewSymptom('');
     }
@@ -108,12 +84,76 @@ export default function SymptomManager({ darkMode }: { darkMode: boolean }) {
 
   const resetSymptoms = () => {
     setSymptoms(initialSymptoms);
+    setHistory([]);
+  };
+
+  const exportData = () => {
+    const dataStr = JSON.stringify(symptoms, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'symptoms_data.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const importedData = JSON.parse(reader.result as string);
+          setSymptoms(importedData);
+        } catch (error) {
+          alert('Invalid file format');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: { display: false },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 5,
+        ticks: {
+          stepSize: 1,
+          color: darkMode ? '#9ca3af' : '#4b5563',
+        },
+        grid: { color: darkMode ? '#374151' : '#e5e7eb' },
+      },
+      x: {
+        ticks: { color: darkMode ? '#9ca3af' : '#4b5563' },
+        grid: { display: false },
+      },
+    },
+  };
+
+  const data = {
+    labels: Object.keys(symptoms).map((s) => s.charAt(0).toUpperCase() + s.slice(1)),
+    datasets: [
+      {
+        data: Object.values(symptoms),
+        backgroundColor: darkMode ? '#f472b6' : '#db2777',
+        borderRadius: 8,
+      },
+    ],
   };
 
   return (
-    <div className={`w-full max-w-4xl mx-auto rounded-xl overflow-hidden ${
-      darkMode ? 'bg-gray-800' : 'bg-white'
-    } shadow-lg p-6`}>
+    <div
+      className={`w-full max-w-4xl mx-auto rounded-xl overflow-hidden ${
+        darkMode ? 'bg-gray-800' : 'bg-white'
+      } shadow-lg p-6`}
+    >
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-2">📊 Symptom Tracker</h3>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -162,16 +202,14 @@ export default function SymptomManager({ darkMode }: { darkMode: boolean }) {
             darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
           }`}
         />
-        <button
-          onClick={addSymptom}
-          className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition"
-        >
+        <button onClick={addSymptom} className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">
           Add Symptom
         </button>
-        <button
-          onClick={resetSymptoms}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
-        >
+        <button onClick={exportData} className="px-4 py-2 bg-blue-500 text-white rounded-lg">
+          Export Data
+        </button>
+        <input type="file" accept="application/json" onChange={importData} className="hidden" />
+        <button onClick={resetSymptoms} className="px-4 py-2 bg-gray-500 text-white rounded-lg">
           Reset
         </button>
       </div>

@@ -175,13 +175,13 @@ function App() {
                   <span className="font-bold text-lg">HealthAssist</span>
                 </div>
                 <div className="flex space-x-6">
-                  <a href="#" className="hover:text-pink-500 transition-colors">
+                  <a href="https://github.com/obsidianspecter" className="hover:text-pink-500 transition-colors">
                     <Github className="w-6 h-6" />
                   </a>
-                  <a href="#" className="hover:text-pink-500 transition-colors">
+                  <a href="https://twitter.com" className="hover:text-pink-500 transition-colors">
                     <Twitter className="w-6 h-6" />
                   </a>
-                  <a href="#" className="hover:text-pink-500 transition-colors">
+                  <a href="https://www.linkedin.com/in/anvin141/" className="hover:text-pink-500 transition-colors">
                     <Linkedin className="w-6 h-6" />
                   </a>
                 </div>
