@@ -27,7 +27,7 @@ export default function AIHealthChat({ darkMode }: { darkMode: boolean }) {
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [, setUploadedFile] = useState<File | null>(null);
 
   useEffect(() => {
     localStorage.setItem('chatMessages', JSON.stringify(messages));

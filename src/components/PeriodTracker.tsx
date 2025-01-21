@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import Tooltip from 'react-tooltip-lite';
+import { Tooltip } from 'react-tooltip';
 
 export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
   const [cycleLength, setCycleLength] = useState<number>(() => {
@@ -21,7 +21,7 @@ export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
 
   const generateCycleEvents = () => {
     const events = [];
-    const periodDuration = 5; 
+    const periodDuration = 5;
     const fertileWindowStart = 10;
     const fertileWindowEnd = 15;
     const ovulationDay = 14;
@@ -54,10 +54,6 @@ export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
   };
 
   const events = generateCycleEvents();
-
-  const handleEventClick = (info: any) => {
-    alert(`Event: ${info.event.title}\nStart: ${info.event.start.toDateString()}`);
-  };
 
   return (
     <div className={`w-full max-w-4xl mx-auto rounded-xl overflow-hidden ${
@@ -98,56 +94,50 @@ export default function PeriodTracker({ darkMode }: { darkMode: boolean }) {
               darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-900'
             }`}
           />
-          {cycleLength < 21 && (
-            <p className="text-xs text-red-500">Short cycle length detected. Consult your healthcare provider.</p>
-          )}
-          {cycleLength > 35 && (
-            <p className="text-xs text-red-500">Long cycle length detected. Consider seeking medical advice.</p>
-          )}
         </div>
       </div>
 
       {/* Calendar Section */}
-      <div className={`${darkMode ? 'fc-dark' : ''}`}>
-        <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          events={events}
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth'
-          }}
-          height="500px"
-          selectable={true}
-          editable={false}
-          themeSystem="standard"
-          eventClick={handleEventClick}
-        />
-      </div>
+      <FullCalendar
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
+        events={events}
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth'
+        }}
+        height="500px"
+        selectable={true}
+        editable={false}
+        themeSystem="standard"
+      />
 
       {/* Event Legend */}
       <div className="mt-6 flex flex-wrap space-x-4">
-        <Tooltip content="Your estimated period dates">
-          <span className="flex items-center">
+        <div id="period-tooltip" data-tooltip-content="Your estimated period dates">
+          <div className="flex items-center cursor-pointer">
             <div className="w-4 h-4 rounded-full bg-pink-500 mr-2"></div>
             <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Period</span>
-          </span>
-        </Tooltip>
+          </div>
+        </div>
+        <Tooltip anchorSelect="#period-tooltip" place="top" />
 
-        <Tooltip content="Your fertile window for potential conception">
-          <span className="flex items-center">
+        <div id="fertile-tooltip" data-tooltip-content="Your fertile window for potential conception">
+          <div className="flex items-center cursor-pointer">
             <div className="w-4 h-4 rounded-full bg-purple-500 mr-2"></div>
             <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Fertile Window</span>
-          </span>
-        </Tooltip>
+          </div>
+        </div>
+        <Tooltip anchorSelect="#fertile-tooltip" place="top" />
 
-        <Tooltip content="The estimated ovulation day">
-          <span className="flex items-center">
+        <div id="ovulation-tooltip" data-tooltip-content="The estimated ovulation day">
+          <div className="flex items-center cursor-pointer">
             <div className="w-4 h-4 rounded-full bg-indigo-500 mr-2"></div>
             <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Ovulation</span>
-          </span>
-        </Tooltip>
+          </div>
+        </div>
+        <Tooltip anchorSelect="#ovulation-tooltip" place="top" />
       </div>
 
       {/* Notification for Upcoming Events */}

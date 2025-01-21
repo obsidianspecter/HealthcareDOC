@@ -8,7 +8,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import { openDB } from 'idb';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -40,7 +40,7 @@ export default function SymptomManager({ darkMode }: { darkMode: boolean }) {
   };
 
   const [symptoms, setSymptoms] = useState<{ [key: string]: number }>(initialSymptoms);
-  const [history, setHistory] = useState<{ symptom: string; value: number; timestamp: string }[]>([]);
+  const [, setHistory] = useState<{ symptom: string; value: number; timestamp: string }[]>([]);
   const [newSymptom, setNewSymptom] = useState('');
 
   useEffect(() => {
